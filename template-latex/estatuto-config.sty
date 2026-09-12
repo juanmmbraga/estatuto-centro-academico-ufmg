@@ -1,0 +1,185 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{estatuto-config}[2026/04/28 Estatuto configuration]
+
+% --------------------------------------------------------------
+% Packages
+% --------------------------------------------------------------
+\RequirePackage{iftex}
+\ifPDFTeX
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage[T1]{fontenc}
+  % Use TeX Gyre Heros (metrically similar to Helvetica Neue) for pdfTeX
+  % scaled value can be adjusted if the metrics look too large/small
+  \RequirePackage[scaled=0.95]{tgheros}
+  \renewcommand{\familydefault}{\sfdefault}
+\else
+  % Use system font (requires XeLaTeX or LuaLaTeX)
+  \RequirePackage{fontspec}
+  \IfFontExistsTF{Helvetica Neue}{%
+    \setsansfont{Helvetica Neue}
+  }{%
+    % Fallback if Helvetica Neue isn't available in the environment
+    \setsansfont{Helvetica}
+  }%
+  \renewcommand{\familydefault}{\sfdefault}
+\fi
+
+\RequirePackage[brazil]{babel}
+\RequirePackage{enumitem}
+\RequirePackage{titlesec}
+\RequirePackage{setspace}
+\RequirePackage{geometry}
+\RequirePackage{xcolor}
+\RequirePackage{marginnote}
+\RequirePackage{graphicx}
+\RequirePackage[colorinlistoftodos]{todonotes}
+
+% ----------------------- Toggle para todos -----------------------
+% permite habilitar/desabilitar notas \todo sem remover comandos
+\newif\iftodos
+\todostrue % padrão: mostrar todos. troque para \todosfalse para ocultar por padrão
+\RequirePackage{xparse}
+\let\oldtodo\todo
+\RenewDocumentCommand{\todo}{O{} m}{%
+  \iftodos
+    \oldtodo[#1]{#2}%
+  \else
+    % notas desabilitadas: não imprime nada
+  \fi
+}
+\newcommand{\showtodos}{\todostrue}
+\newcommand{\hidetodos}{\todosfalse}
+
+
+% hyperref near the end; bookmark after hyperref
+\RequirePackage{hyperref}
+\RequirePackage{bookmark}
+
+% --------------------------------------------------------------
+% Page layout
+% --------------------------------------------------------------
+\geometry{
+  left=2.0cm,
+  right=2.0cm,
+  top=2.5cm,
+  bottom=2.5cm
+}
+
+\setstretch{1.25}
+
+% --------- Texto não justificado (alinhado à esquerda) ---------
+\raggedright
+
+% ---- Paragraph spacing -----------------------------------------
+\setlength{\parskip}{0pt}          % no blank line between paragraphs
+\setlength{\parindent}{1.5em}      % first-line indent
+
+% --------------------------------------------------------------
+% Title formatting
+% --------------------------------------------------------------
+\titleformat{\section}
+  {\normalfont\Large\bfseries\centering}{\thesection.}{0.5em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}{\thesubsubsection.}{0.5em}{}
+
+% --------------------------------------------------------------
+% Counters
+% --------------------------------------------------------------
+\newcounter{cap}
+\newcounter{art}               % continuous numbering (no reset at chapters)
+\newcounter{sec}               % for \secao{}
+\renewcommand{\thecap}{\Roman{cap}}
+\renewcommand{\theart}{\arabic{art}}
+\renewcommand{\thesection}{\Alph{sec}}   % used only if \section is needed
+
+% --------------------------------------------------------------
+% Macros for legislative elements
+% --------------------------------------------------------------
+
+% ----- Chapter ---------------------------------------------------
+\newcommand{\capitulo}[1]{%
+  \refstepcounter{cap}%
+  \section*{CAPÍTULO \thecap\ – #1}%
+  \addcontentsline{toc}{section}{CAPÍTULO \thecap\ – #1}%
+}
+
+% ----- Section (SEÇÃO) -----------------------------------------
+\newcommand{\secao}[1]{%
+  \refstepcounter{sec}%
+  \subsection*{SEÇÃO \thesec\ – #1}%
+  \addcontentsline{toc}{subsection}{SEÇÃO \thesec\ – #1}%
+}
+
+% ----- Article (extra space only between articles) ----------
+\newcommand{\artigo}[2][]{%
+  \refstepcounter{art}% continuous numbering
+  \noindent\textbf{Art. \theart{}º#1} – #2\par
+  % ---- espaço extra **apenas** entre artigos -----------------
+  \vspace{0.8\baselineskip}% ajuste livre; aumenta o espaçamento entre artigos
+  % -----------------------------------------------------------
+}
+
+% Variante que aceita label explícito: \artigoL{<label>}{<texto>}
+% Usa \phantomsection para garantir alvo correto do hyperref
+\newcommand{\artigoL}[2]{%
+  \refstepcounter{art}%
+  \phantomsection%
+  \label{#1}%
+  \noindent\textbf{Art. \theart{}º} – #2\par
+  \vspace{0.8\baselineskip}%
+}
+
+% Auxiliar: inserir label dentro do corpo do artigo sem renomear \artigo
+% Uso: \artigo{\artlabel{art:exemplo} Texto do artigo...}
+\newcommand{\artlabel}[1]{%
+  \phantomsection\label{#1}%
+}
+
+% ----- Paragraph (single §) --------------------------------------
+% Automatically numbered within each article.
+\newcounter{parnum}[art]
+\renewcommand{\theparnum}{\arabic{parnum}}
+\newcommand{\paragrafo}[1]{%
+  \refstepcounter{parnum}%
+  \par
+  \noindent\hspace*{2em}%
+  \textbf{§ \theparnum{}º} – #1\par
+}
+
+% ----- Parágrafo único (indented) -------------------------------
+\newcommand{\paragrafoUnico}[1]{%
+  \par                                   % encerra eventual parágrafo aberto
+  \noindent\hspace*{2em}% <- indentation (ajuste opcional)
+  \textbf{Parágrafo único.}\space #1\par % corpo termina com \par
+}
+
+% ----- Enumerated items (inciso / alínea) -----------------------
+\newcommand{\inciso}[1]{%
+  \begin{enumerate}[label=\Roman*., leftmargin=2.5em, nosep]
+    #1
+  \end{enumerate}
+}
+\newcommand{\alinea}[1]{%
+  \begin{enumerate}[label=\arabic*)., leftmargin=3.0em, nosep]
+    #1
+  \end{enumerate}
+}
+
+% --------------------------------------------------------------
+% Comment / highlight macro
+% --------------------------------------------------------------
+\newcommand{\hlcomment}[3][]{%
+  \begingroup
+    \setlength{\fboxsep}{1pt}%
+    \colorbox{yellow!30}{#2}%
+    \kern0.3ex%
+    \textsuperscript{\scriptsize\raisebox{0.5ex}{#1}}%
+    \marginnote{\raggedright\footnotesize#3}%
+  \endgroup
+}
+\providecommand{\defaultmarker}{\dag}
+\newcommand{\hlc}[2]{\hlcomment[\defaultmarker]{#1}{#2}}
+
+\endinput
